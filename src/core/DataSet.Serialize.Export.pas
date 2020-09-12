@@ -55,10 +55,12 @@ type
     ///   Returns a string with the cryptogrammed content in Base64.
     /// </returns>
     function EncodingBlobField(const AField: TField): string;
+    {$IF NOT DEFINED(FPC)}
     /// <summary>
     ///   Verifiy if a DataSet has detail dataset and if has child modification.
     /// </summary>
-    function HasChildModification(const ADataSet: TDataSet): Boolean;    
+    function HasChildModification(const ADataSet: TDataSet): Boolean;
+    {$ENDIF}
   public
     /// <summary>
     ///   Responsible for creating a new instance of TDataSetSerialize class.
@@ -100,7 +102,7 @@ implementation
 
 uses
 {$IF DEFINED(FPC)}
-  DateUtils, SysUtils, Classes, Generics.Collections, FmtBCD, TypInfo,
+  DateUtils, SysUtils, Classes, FmtBCD, TypInfo, base64,
 {$ELSE}
   System.DateUtils, Data.FmtBcd, System.SysUtils, System.TypInfo, System.Classes, System.NetEncoding,
   System.Generics.Collections, FireDAC.Comp.DataSet,
@@ -127,12 +129,14 @@ begin
     ADataSet.First;
     while not ADataSet.Eof do
     begin
+      {$IF NOT DEFINED(FPC)}
       if IsChild and FOnlyUpdatedRecords then
         if (ADataSet.UpdateStatus = TUpdateStatus.usUnmodified) and not(HasChildModification(ADataSet)) then
         begin
           ADataSet.Next;
           Continue;
         end;
+      {$ENDIF}
       Result.{$IF DEFINED(FPC)}Add{$ELSE}AddElement{$ENDIF}(DataSetToJSONObject(ADataSet));
       ADataSet.Next;
     end;
@@ -146,8 +150,10 @@ end;
 function TDataSetSerialize.DataSetToJSONObject(const ADataSet: TDataSet): TJSONObject;
 var
   LKey: string;
+  {$IF NOT DEFINED(FPC)}
   LNestedDataSet: TDataSet;
   LDataSetDetails: TList<TDataSet>;
+  {$ENDIF}
   LField: TField;
 begin
   Result := TJSONObject.Create;
@@ -202,11 +208,13 @@ begin
         end;
       TFieldType.ftFMTBcd, TFieldType.ftBCD:
         Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, {$IF DEFINED(FPC)}BcdToDouble(LField.AsBcd){$ELSE}TJSONNumber.Create(BcdToDouble(LField.AsBcd)){$ENDIF});
+      {$IF NOT DEFINED(FPC)}
       TFieldType.ftDataSet:
         begin
           LNestedDataSet := TDataSetField(LField).NestedDataSet;
-          Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, DataSetToJSONArray(LNestedDataSet));
+          Result.AddPair(LKey, DataSetToJSONArray(LNestedDataSet));
         end;
+      {$ENDIF}
       TFieldType.ftGraphic, TFieldType.ftBlob, TFieldType.ftOraBlob{$IF NOT DEFINED(FPC)}, TFieldType.ftStream{$ENDIF}:
         Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TJSONString.Create(EncodingBlobField(LField)));
       else
@@ -220,6 +228,7 @@ begin
     else
       Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}('object_state', TJSONString.Create(ADataSet.UpdateStatus.ToString));
   end;
+  {$IF NOT DEFINED(FPC)}
   if FChildRecord then
   begin
     LDataSetDetails := TList<TDataSet>.Create;
@@ -231,9 +240,9 @@ begin
           TFDDataSet(LNestedDataSet).FilterChanges := [rtInserted, rtModified, rtDeleted, rtUnmodified];
         if TDataSetSerializeConfig.GetInstance.Export.ExportEmptyDataSet or (LNestedDataSet.RecordCount > 0) then
           if TDataSetSerializeConfig.GetInstance.Export.ExportChildDataSetAsJsonObject and (LNestedDataSet.RecordCount = 1) then
-            Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(TDataSetSerializeUtils.FormatDataSetName(LNestedDataSet.Name), DataSetToJsonObject(LNestedDataSet))
+            Result.AddPair(TDataSetSerializeUtils.FormatDataSetName(LNestedDataSet.Name), DataSetToJsonObject(LNestedDataSet))
           else
-            Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(TDataSetSerializeUtils.FormatDataSetName(LNestedDataSet.Name), DataSetToJSONArray(LNestedDataSet, True));
+            Result.AddPair(TDataSetSerializeUtils.FormatDataSetName(LNestedDataSet.Name), DataSetToJSONArray(LNestedDataSet, True));
         if FOnlyUpdatedRecords then
           TFDDataSet(LNestedDataSet).FilterChanges := [rtInserted, rtModified, rtUnmodified];
       end;
@@ -241,17 +250,23 @@ begin
       LDataSetDetails.Free;
     end;
   end;
+  {$ENDIF}
 end;
 
 function TDataSetSerialize.EncodingBlobField(const AField: TField): string;
 var
   LMemoryStream: TMemoryStream;
+  {$IF NOT DEFINED(FPC)}
   LStringStream: TStringStream;
+  {$ENDIF}
 begin
   LMemoryStream := TMemoryStream.Create;
   try
     TBlobField(AField).SaveToStream(LMemoryStream);
     LMemoryStream.Position := 0;
+    {$IF DEFINED(FPC)}
+    Result := EncodeStringBase64(TStringStream(LMemoryStream).DataString);
+    {$ELSE}
     LStringStream := TStringStream.Create;
     try
       TNetEncoding.Base64.Encode(LMemoryStream, LStringStream);
@@ -259,11 +274,13 @@ begin
     finally
       LStringStream.Free;
     end;
+    {$ENDIF}
   finally
     LMemoryStream.Free;
   end;
 end;
 
+{$IF NOT DEFINED(FPC)}
 function TDataSetSerialize.HasChildModification(const ADataSet: TDataSet): Boolean;
 var
   LMasterSource: TDataSource;
@@ -271,7 +288,6 @@ var
   LNestedDataSet: TDataSet;
 begin
   Result := False;
-{$IF NOT DEFINED(FPC)}
   LDataSetDetails := TList<TDataSet>.Create;
   try
     ADataSet.GetDetailDataSets(LDataSetDetails);
@@ -297,8 +313,8 @@ begin
   finally
     LDataSetDetails.Free;
   end;
-{$ENDIF}
 end;
+{$ENDIF}
 
 function TDataSetSerialize.SaveStructure: TJSONArray;
 var

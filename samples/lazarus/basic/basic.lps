@@ -4,96 +4,100 @@
     <PathDelim Value="\"/>
     <Version Value="11"/>
     <BuildModes Active="Default"/>
-    <Units Count="21">
+    <Units Count="22">
       <Unit0>
         <Filename Value="basic.lpr"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <CursorPos X="25" Y="6"/>
-        <UsageCount Value="24"/>
+        <CursorPos X="57" Y="8"/>
+        <UsageCount Value="27"/>
       </Unit0>
       <Unit1>
         <Filename Value="src\dataset.serialize.samples.basic.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FrmBasic"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="DataSet.Serialize.Samples.Basic"/>
         <EditorIndex Value="-1"/>
-        <CursorPos X="21" Y="4"/>
-        <UsageCount Value="24"/>
+        <TopLine Value="86"/>
+        <CursorPos X="32" Y="89"/>
+        <UsageCount Value="27"/>
+        <Bookmarks Count="1">
+          <Item0 X="6" Y="99" ID="1"/>
+        </Bookmarks>
       </Unit1>
       <Unit2>
         <Filename Value="..\..\..\src\types\DataSet.Serialize.BooleanField.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="11" Y="5"/>
-        <UsageCount Value="24"/>
+        <UsageCount Value="27"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\..\..\src\types\DataSet.Serialize.Language.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="12" Y="2"/>
-        <UsageCount Value="24"/>
+        <UsageCount Value="27"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\..\..\src\types\DataSet.Serialize.UpdatedStatus.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="45" Y="3"/>
-        <UsageCount Value="24"/>
+        <UsageCount Value="27"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\..\..\src\singletons\DataSet.Serialize.Config.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <CursorPos X="47" Y="8"/>
-        <UsageCount Value="24"/>
+        <TopLine Value="34"/>
+        <CursorPos X="5" Y="43"/>
+        <UsageCount Value="27"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\..\src\providers\DataSet.Serialize.Consts.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="8" Y="2"/>
-        <UsageCount Value="24"/>
+        <UsageCount Value="27"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\..\..\src\providers\DataSet.Serialize.Utils.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="223"/>
-        <CursorPos X="39" Y="233"/>
-        <UsageCount Value="24"/>
+        <TopLine Value="125"/>
+        <CursorPos X="19" Y="134"/>
+        <UsageCount Value="27"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\src\helpers\DataSet.Serialize.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="294"/>
-        <CursorPos X="132" Y="302"/>
-        <UsageCount Value="24"/>
+        <TopLine Value="242"/>
+        <CursorPos X="3" Y="248"/>
+        <UsageCount Value="27"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\..\..\src\core\DataSet.Serialize.Export.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="247"/>
-        <CursorPos X="30" Y="253"/>
-        <UsageCount Value="24"/>
-        <Bookmarks Count="2">
-          <Item0 X="17" Y="311" ID="2"/>
-          <Item1 X="17" Y="102" ID="1"/>
+        <TopLine Value="40"/>
+        <CursorPos X="31" Y="48"/>
+        <UsageCount Value="27"/>
+        <Bookmarks Count="1">
+          <Item0 X="17" Y="327" ID="2"/>
         </Bookmarks>
       </Unit9>
       <Unit10>
         <Filename Value="..\..\..\src\core\DataSet.Serialize.Import.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="339"/>
-        <CursorPos X="42" Y="342"/>
-        <UsageCount Value="24"/>
+        <TopLine Value="727"/>
+        <CursorPos X="39" Y="740"/>
+        <UsageCount Value="27"/>
       </Unit10>
       <Unit11>
         <Filename Value="D:\Programas\lazarus\fpc\3.2.0\source\packages\fcl-db\src\base\db.pas"/>
@@ -134,21 +138,23 @@
       <Unit16>
         <Filename Value="D:\Programas\lazarus\fpc\3.2.0\source\packages\fcl-base\src\base64.pp"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="19"/>
+        <TopLine Value="10"/>
+        <CursorPos X="12" Y="25"/>
         <UsageCount Value="10"/>
       </Unit16>
       <Unit17>
         <Filename Value="D:\Programas\lazarus\fpc\3.2.0\source\rtl\objpas\fgl.pp"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="28"/>
+        <TopLine Value="921"/>
+        <CursorPos Y="930"/>
         <UsageCount Value="10"/>
       </Unit17>
       <Unit18>
         <Filename Value="D:\Programas\lazarus\fpc\3.2.0\source\packages\rtl-generics\src\generics.collections.pas"/>
         <UnitName Value="Generics.Collections"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="1617"/>
-        <CursorPos X="21" Y="1623"/>
+        <TopLine Value="135"/>
+        <CursorPos X="52" Y="144"/>
         <UsageCount Value="10"/>
       </Unit18>
       <Unit19>
@@ -166,6 +172,13 @@
         <CursorPos X="12" Y="139"/>
         <UsageCount Value="10"/>
       </Unit20>
+      <Unit21>
+        <Filename Value="D:\Programas\lazarus\fpc\3.2.0\source\packages\fcl-db\src\memds\memds.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="22"/>
+        <CursorPos X="29" Y="26"/>
+        <UsageCount Value="10"/>
+      </Unit21>
     </Units>
     <General>
       <ActiveWindowIndexAtStart Value="-1"/>
