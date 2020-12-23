@@ -214,7 +214,10 @@ begin
     if LField.IsNull then
     begin
       if TDataSetSerializeConfig.GetInstance.Export.ExportNullValues then
-        Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TJSONNull.Create);
+        if TDataSetSerializeConfig.GetInstance.Export.ExportNullAsEmptyString then
+          Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, '')
+        else
+          Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TJSONNull.Create);
       Continue;
     end;
     case LField.DataType of
@@ -383,6 +386,9 @@ begin
     LJSONObject.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(FIELD_PROPERTY_DATA_TYPE, TJSONString.Create(GetEnumName(TypeInfo(TFieldType), Integer(LField.DataType))));
     LJSONObject.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(FIELD_PROPERTY_SIZE, {$IF DEFINED(FPC)}LField.Size{$ELSE}TJSONNumber.Create(LField.Size){$ENDIF});
     LJSONObject.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(FIELD_PROPERTY_ORIGIN, TJSONString.Create(LField.ORIGIN));
+
+    if IsPublishedProp(LField, 'Precision') then
+      LJSONObject.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(FIELD_PROPERTY_PRECISION, {$IF DEFINED(FPC)}TFloatField(LField).Precision{$ELSE}TJSONNumber.Create(TFloatField(LField).Precision){$ENDIF});
 
     {$IF DEFINED(FPC)}
     LJSONObject.Add(FIELD_PROPERTY_KEY, pfInKey in LField.ProviderFlags);
