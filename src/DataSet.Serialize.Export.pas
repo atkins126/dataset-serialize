@@ -1,7 +1,7 @@
 unit DataSet.Serialize.Export;
 
 {$IF DEFINED(FPC)}
-{$MODE DELPHI}{$H+}
+  {$MODE DELPHI}{$H+}
 {$ENDIF}
 
 interface
@@ -107,8 +107,7 @@ uses
   System.DateUtils, Data.FmtBcd, System.SysUtils, System.TypInfo, System.Classes, System.NetEncoding, System.Generics.Collections,
   FireDAC.Comp.DataSet,
 {$ENDIF}
-  DataSet.Serialize.BooleanField, DataSet.Serialize.Utils, DataSet.Serialize.Consts, DataSet.Serialize.UpdatedStatus,
-  DataSet.Serialize.Config;
+  DataSet.Serialize.Utils, DataSet.Serialize.Consts, DataSet.Serialize.UpdatedStatus, DataSet.Serialize.Config;
 
 { TDataSetSerialize }
 
@@ -142,14 +141,7 @@ begin
       begin
         case ADataSet.Fields[0].DataType of
           TFieldType.ftBoolean:
-        begin
-          case TDataSetSerializeUtils.BooleanFieldToType(TBooleanField(ADataSet.Fields[0])) of
-            bfUnknown, bfBoolean:
-              Result.Add(ADataSet.Fields[0].AsBoolean);
-            else
-              Result.Add(ADataSet.Fields[0].AsInteger);
-          end;
-        end;
+            Result.Add(ADataSet.Fields[0].AsBoolean);
           TFieldType.ftInteger, TFieldType.ftSmallint, TFieldType.ftShortint:
             Result.Add(ADataSet.Fields[0].AsInteger);
           TFieldType.ftLongWord, TFieldType.ftAutoInc, TFieldType.ftString, TFieldType.ftWideString, TFieldType.ftMemo, TFieldType.ftWideMemo, TFieldType.ftGuid:
@@ -159,11 +151,11 @@ begin
           TFieldType.ftSingle, TFieldType.ftFloat:
             Result.Add(ADataSet.Fields[0].AsFloat);
           TFieldType.ftDateTime:
-               Result.Add(FormatDateTime('yyyy-mm-dd hh:mm:ss.zzz', ADataSet.Fields[0].AsDateTime));
+               Result.Add(FormatDateTime(TDataSetSerializeConfig.GetInstance.Export.FormatDateTime, ADataSet.Fields[0].AsDateTime));
            TFieldType.ftTimeStamp:
                Result.Add(DateToISO8601(ADataSet.Fields[0].AsDateTime, TDataSetSerializeConfig.GetInstance.DateInputIsUTC));
            TFieldType.ftTime:
-               Result.Add(FormatDateTime('hh:mm:ss.zzz', ADataSet.Fields[0].AsDateTime));
+               Result.Add(FormatDateTime(TDataSetSerializeConfig.GetInstance.Export.FormatTime, ADataSet.Fields[0].AsDateTime));
            TFieldType.ftDate:
                Result.Add(FormatDateTime(TDataSetSerializeConfig.GetInstance.Export.FormatDate, ADataSet.Fields[0].AsDateTime));
           TFieldType.ftCurrency:
@@ -210,7 +202,7 @@ begin
     if TDataSetSerializeConfig.GetInstance.Export.ExportOnlyFieldsVisible then
       if not(LField.Visible) then
         Continue;
-    LKey := TDataSetSerializeUtils.NameToLowerCamelCase(LField.FieldName);
+    LKey := TDataSetSerializeUtils.FormatCaseNameDefinition(LField.FieldName);
     if LField.IsNull then
     begin
       if TDataSetSerializeConfig.GetInstance.Export.ExportNullValues then
@@ -222,14 +214,7 @@ begin
     end;
     case LField.DataType of
       TFieldType.ftBoolean:
-        begin
-          case TDataSetSerializeUtils.BooleanFieldToType(TBooleanField(LField)) of
-            bfUnknown, bfBoolean:
-              Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TDataSetSerializeUtils.BooleanToJSON(LField.AsBoolean));
-            else
-              Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, {$IF DEFINED(FPC)}LField.AsInteger{$ELSE}TJSONNumber.Create(LField.AsInteger){$ENDIF});
-          end;
-        end;
+        Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TDataSetSerializeUtils.BooleanToJSON(LField.AsBoolean));
       TFieldType.ftInteger, TFieldType.ftSmallint{$IF NOT DEFINED(FPC)}, TFieldType.ftShortint{$ENDIF}:
         Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, {$IF DEFINED(FPC)}LField.AsInteger{$ELSE}TJSONNumber.Create(LField.AsInteger){$ENDIF});
       {$IF NOT DEFINED(FPC)}TFieldType.ftLongWord, {$ENDIF}TFieldType.ftAutoInc:
@@ -271,12 +256,7 @@ begin
     end;
   end;
   if (FOnlyUpdatedRecords) and (FDataSet <> ADataSet) then
-  begin
-    if TDataSetSerializeConfig.GetInstance.LowerCamelCase then
-      Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}('objectState', TJSONString.Create(ADataSet.UpdateStatus.ToString))
-    else
-      Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}('object_state', TJSONString.Create(ADataSet.UpdateStatus.ToString));
-  end;
+    Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(TDataSetSerializeUtils.FormatCaseNameDefinition('object_state'), TJSONString.Create(ADataSet.UpdateStatus.ToString));
   {$IF NOT DEFINED(FPC)}
   if FChildRecord then
   begin

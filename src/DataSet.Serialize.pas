@@ -1,7 +1,7 @@
 unit DataSet.Serialize;
 
 {$IF DEFINED(FPC)}
-{$MODE DELPHI}{$H+}
+  {$MODE DELPHI}{$H+}
 {$ENDIF}
 
 interface
@@ -12,9 +12,13 @@ uses
 {$ELSE}
   System.JSON, Data.DB,
 {$ENDIF}
-  DataSet.Serialize.Language;
+  DataSet.Serialize.Language, DataSet.Serialize.Config;
 
 type
+  TLanguageType = DataSet.Serialize.Language.TLanguageType;
+  TDataSetSerializeConfig = DataSet.Serialize.Config.TDataSetSerializeConfig;
+  TCaseNameDefinition = DataSet.Serialize.Config.TCaseNameDefinition;
+
   TDataSetSerializeHelper = class Helper for TDataSet
   public
     /// <summary>
@@ -243,7 +247,7 @@ var
 begin
   LJSONObject := Self.ToJSONObject(AOnlyUpdatedRecords, AChildRecords);
   try
-    Result := LJSONObject.ToString;
+    Result := {$IF DEFINED(FPC)}LJSONObject.AsJSON{$ELSE}LJSONObject.ToString{$ENDIF};
   finally
     LJSONObject.Free;
   end;
@@ -255,7 +259,7 @@ var
 begin
   LJSONArray := Self.ToJSONArray(AOnlyUpdatedRecords, AChildRecords);
   try
-    Result := LJSONArray.ToString;
+    Result := {$IF DEFINED(FPC)}LJSONArray.AsJSON{$ELSE}LJSONArray.ToString{$ENDIF};
   finally
     LJSONArray.Free;
   end;
