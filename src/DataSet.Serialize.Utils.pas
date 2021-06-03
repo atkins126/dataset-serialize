@@ -131,15 +131,17 @@ end;
 class function TDataSetSerializeUtils.FormatCaseNameDefinition(const AFieldName: string): string;
 var
   I: Integer;
+  LCaseNameDefinition: TCaseNameDefinition;
   LField: TArray<Char>;
 begin
   Result := EmptyStr;
-  case TDataSetSerializeConfig.GetInstance.CaseNameDefinition of
+  LCaseNameDefinition := TDataSetSerializeConfig.GetInstance.CaseNameDefinition;
+  case LCaseNameDefinition of
     cndLower:
       Result := AFieldName.ToLower;
     cndUpper:
       Result := AFieldName.ToUpper;
-    cndLowerCamelCase:
+    cndLowerCamelCase, cndUpperCamelCase:
       begin
         LField := AFieldName.ToCharArray;
         I := Low(LField);
@@ -151,7 +153,12 @@ begin
             Result := Result + UpperCase(LField[I]);
           end
           else
-            Result := Result + LowerCase(LField[I]);
+          begin
+            if (LCaseNameDefinition = cndUpperCamelCase) and (I = 0) then
+              Result := Result + UpperCase(LField[I])
+            else
+              Result := Result + LowerCase(LField[I]);
+          end;
           Inc(I);
         end;
         if Result.IsEmpty then
