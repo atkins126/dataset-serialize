@@ -20,6 +20,7 @@ type
     FOnlyUpdatedRecords: Boolean;
     FChildRecord: Boolean;
     FValueRecord: Boolean;
+    FEncodeBase64Blob: Boolean;
     /// <summary>
     ///   Creates a JSON object with the data from the current record of DataSet.
     /// </summary>
@@ -54,7 +55,7 @@ type
     /// <remarks>
     ///   Invisible or null fields will not be exported.
     /// </remarks>
-    function DataSetToJSONArray(const ADataSet: TDataSet; const IsChild: Boolean; const IsValue: Boolean = True): TJSONArray;
+    function DataSetToJSONArray(const ADataSet: TDataSet; const IsChild: Boolean; const IsValue: Boolean = True; const IsEncodeBlob: Boolean = True): TJSONArray;
     /// <summary>
     ///   Encrypts a blob field in Base64.
     /// </summary>
@@ -79,7 +80,7 @@ type
     /// <summary>
     ///   Responsible for creating a new instance of TDataSetSerialize class.
     /// </summary>
-    constructor Create(const ADataSet: TDataSet; const AOnlyUpdatedRecords: Boolean = False; const AChildRecords: Boolean = True; const AValueRecords: Boolean = True);
+    constructor Create(const ADataSet: TDataSet; const AOnlyUpdatedRecords: Boolean = False; const AChildRecords: Boolean = True; const AValueRecords: Boolean = True; const AEncodeBase64Blob: Boolean = True);
     /// <summary>
     ///   Creates an array of JSON objects with all DataSet records.
     /// </summary>
@@ -116,9 +117,9 @@ implementation
 
 uses
 {$IF DEFINED(FPC)}
-  DateUtils, SysUtils, Classes, FmtBCD, TypInfo, base64,
+  DateUtils, SysUtils, Classes, FmtBCD, TypInfo, base64, StrUtils,
 {$ELSE}
-  System.DateUtils, Data.FmtBcd, System.SysUtils, System.TypInfo, System.Classes, System.NetEncoding, System.Generics.Collections,
+  System.DateUtils, Data.FmtBcd, System.SysUtils, System.StrUtils, System.TypInfo, System.Classes, System.NetEncoding, System.Generics.Collections,
   FireDAC.Comp.DataSet,
 {$ENDIF}
   DataSet.Serialize.Utils, DataSet.Serialize.Consts, DataSet.Serialize.UpdatedStatus, DataSet.Serialize.Config;
@@ -130,7 +131,7 @@ begin
   Result := DataSetToJSONObject(FDataSet);
 end;
 
-function TDataSetSerialize.DataSetToJSONArray(const ADataSet: TDataSet; const IsChild: Boolean; const IsValue: Boolean = True): TJSONArray;
+function TDataSetSerialize.DataSetToJSONArray(const ADataSet: TDataSet; const IsChild: Boolean; const IsValue: Boolean = True; const IsEncodeBlob: Boolean = True): TJSONArray;
 var
   LBookMark: TBookmark;
 begin
@@ -182,7 +183,12 @@ begin
           TFieldType.ftFMTBcd, TFieldType.ftBCD:
             Result.Add(BcdToDouble(ADataSet.Fields[0].AsBcd));
           TFieldType.ftGraphic, TFieldType.ftBlob, TFieldType.ftOraBlob, TFieldType.ftStream:
-            Result.Add(EncodingBlobField(ADataSet.Fields[0]));
+          begin
+            if IsEncodeBlob then
+              Result.Add(EncodingBlobField(ADataSet.Fields[0]))
+            else
+              Result.Add(ADataSet.Fields[0].AsString);
+          end;
           else
             raise EDataSetSerializeException.CreateFmt(FIELD_TYPE_NOT_FOUND, [ADataSet.Fields[0].FieldName]);
         end;
@@ -229,10 +235,8 @@ begin
     case LField.DataType of
       TFieldType.ftBoolean:
         Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TDataSetSerializeUtils.BooleanToJSON(LField.AsBoolean));
-      TFieldType.ftInteger, TFieldType.ftSmallint{$IF NOT DEFINED(FPC)}, TFieldType.ftShortint, TFieldType.ftWord, TFieldType.ftByte{$ENDIF}:
+      TFieldType.ftInteger, TFieldType.ftSmallint, TFieldType.ftAutoInc{$IF NOT DEFINED(FPC)}, TFieldType.ftShortint, TFieldType.ftLongWord, TFieldType.ftWord, TFieldType.ftByte{$ENDIF}:
         Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, {$IF DEFINED(FPC)}LField.AsInteger{$ELSE}TJSONNumber.Create(LField.AsInteger){$ENDIF});
-      {$IF NOT DEFINED(FPC)}TFieldType.ftLongWord, {$ENDIF}TFieldType.ftAutoInc:
-        Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, {$IF DEFINED(FPC)}LField.AsWideString{$ELSE}TJSONNumber.Create(LField.AsWideString){$ENDIF});
       TFieldType.ftLargeint:
         Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, {$IF DEFINED(FPC)}LField.AsLargeInt{$ELSE}TJSONNumber.Create(LField.AsLargeInt){$ENDIF});
       {$IF NOT DEFINED(FPC)}TFieldType.ftSingle, TFieldType.ftExtended, {$ENDIF}TFieldType.ftFloat:
@@ -264,7 +268,7 @@ begin
         end;
       {$ENDIF}
       TFieldType.ftGraphic, TFieldType.ftBlob, TFieldType.ftOraBlob{$IF NOT DEFINED(FPC)}, TFieldType.ftStream{$ENDIF}:
-        Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TJSONString.Create(EncodingBlobField(LField)));
+        Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TJSONString.Create(IfThen(FEncodeBase64Blob, EncodingBlobField(LField), LField.AsString)));
       else
         raise EDataSetSerializeException.CreateFmt(FIELD_TYPE_NOT_FOUND, [LKey]);
     end;
@@ -428,17 +432,18 @@ begin
   end;
 end;
 
-constructor TDataSetSerialize.Create(const ADataSet: TDataSet; const AOnlyUpdatedRecords: Boolean = False; const AChildRecords: Boolean = True; const AValueRecords: Boolean = True);
+constructor TDataSetSerialize.Create(const ADataSet: TDataSet; const AOnlyUpdatedRecords: Boolean = False; const AChildRecords: Boolean = True; const AValueRecords: Boolean = True; const AEncodeBase64Blob: Boolean = True);
 begin
   FDataSet := ADataSet;
   FOnlyUpdatedRecords := AOnlyUpdatedRecords;
   FChildRecord := AChildRecords;
   FValueRecord := AValueRecords;
+  FEncodeBase64Blob := AEncodeBase64Blob;
 end;
 
 function TDataSetSerialize.ToJSONArray: TJSONArray;
 begin
-  Result := DataSetToJSONArray(FDataSet, FChildRecord, FValueRecord);
+  Result := DataSetToJSONArray(FDataSet, FChildRecord, FValueRecord, FEncodeBase64Blob);
 end;
 
 end.

@@ -11,6 +11,9 @@ uses
   DB, fpjson,
 {$ELSE}
   System.JSON, Data.DB, System.StrUtils, System.SysUtils, System.Rtti,
+  {$IF CompilerVersion >= 20}
+    System.Character,
+  {$ENDIF}
 {$ENDIF}
   DataSet.Serialize.Language, DataSet.Serialize.Utils;
 
@@ -333,7 +336,7 @@ begin
                 LField.AsBoolean := LBooleanValue;
               {$ENDIF}
             end;
-          TFieldType.ftInteger, TFieldType.ftSmallint{$IF NOT DEFINED(FPC)}, TFieldType.ftShortint, TFieldType.ftLongWord{$ENDIF}:
+          TFieldType.ftInteger, TFieldType.ftSmallint{$IF NOT DEFINED(FPC)}, TFieldType.ftShortint, TFieldType.ftLongWord, TFieldType.ftWord, TFieldType.ftByte{$ENDIF}:
             LField.AsInteger := StrToIntDef(LJSONValue.Value, 0);
           TFieldType.ftLargeint, TFieldType.ftAutoInc:
             LField.AsLargeInt := StrToInt64Def(LJSONValue.Value, 0);
@@ -409,22 +412,35 @@ function TJSONSerialize.JSONPairToFieldName(const AValue: string): string;
 var
   I: Integer;
   LFieldName: string;
+  {$IF NOT DEFINED(FPC) AND (CompilerVersion >= 20)}
+    LCharacter: Char;
+    LCharacterBefore: Char;
+  {$ENDIF}
 begin
   Result := AValue;
   if TDataSetSerializeConfig.GetInstance.CaseNameDefinition = cndLowerCamelCase then
   begin
     LFieldName := EmptyStr;
-    {$IFDEF ANDROID}
+    {$IF (DEFINED(ANDROID) or DEFINED(IOS)) and (CompilerVersion < 34.0)}
     for I := 0 to Pred(Length(Result)) do
     {$ELSE}
     for I := 1 to Length(Result) do
-    {$ENDIF}
+    {$IFEND}
     begin
+      {$IF DEFINED(FPC) or (CompilerVersion < 20)}
       if CharInSet(Result[I], ['A'..'Z']) and CharInSet(Result[Pred(I)], ['a'..'z']) then
+      {$ELSE}
+      LCharacter := Result[I];
+      {$IF CompilerVersion >= 34.0}
+      if i > 1 then
+      {$ENDIF}
+        LCharacterBefore := Result[Pred(I)];
+      if LCharacter.IsUpper and LCharacterBefore.IsLower then
+      {$ENDIF}
         LFieldName := LFieldName + '_';
       LFieldName := LFieldName + Result[I];
     end;
-    Result := LFieldName.ToUpper;
+    Result := UpperCase(LFieldName);
   end;
 end;
 
@@ -550,10 +566,12 @@ begin
 end;
 
 function TJSONSerialize.LoadFieldStructure(const AJSONValue: {$IF DEFINED(FPC)}TJSONData{$ELSE}TJSONValue{$ENDIF}): TFieldStructure;
+{$IF NOT DEFINED(FPC)}
 var
   LStrTemp: string;
   LIntTemp: Integer;
   LBoolTemp: Boolean;
+{$ENDIF}
 begin
 {$IF NOT DEFINED(FPC)}
   if AJSONValue.TryGetValue<string>(FIELD_PROPERTY_DATA_TYPE, LStrTemp) then
