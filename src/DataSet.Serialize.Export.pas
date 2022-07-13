@@ -170,19 +170,12 @@ begin
               else
                 Result.Add(FormatFloat(TDataSetSerializeConfig.GetInstance.Export.FormatFloat, ADataSet.Fields[0].AsFloat));
             end;
-          TFieldType.ftDateTime:
+          TFieldType.ftDateTime, TFieldType.ftTimeStamp:
             begin
               if TDataSetSerializeConfig.GetInstance.DateIsFloatingPoint then
                 Result.Add(ADataSet.Fields[0].AsDateTime)
               else
                 Result.Add(FormatDateTime(TDataSetSerializeConfig.GetInstance.Export.FormatDateTime, ADataSet.Fields[0].AsDateTime));
-            end;
-          TFieldType.ftTimeStamp:
-            begin
-              if TDataSetSerializeConfig.GetInstance.DateIsFloatingPoint then
-                Result.Add(ADataSet.Fields[0].AsDateTime)
-              else
-                Result.Add(DateToISO8601(ADataSet.Fields[0].AsDateTime, TDataSetSerializeConfig.GetInstance.DateInputIsUTC));
             end;
           TFieldType.ftTime:
             begin
@@ -278,19 +271,12 @@ begin
         end;
       TFieldType.ftString, TFieldType.ftWideString, TFieldType.ftMemo, TFieldType.ftWideMemo, TFieldType.ftGuid, TFieldType.ftFixedChar, TFieldType.ftFixedWideChar:
         Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TJSONString.Create(LField.AsWideString));
-      TFieldType.ftDateTime:
+      TFieldType.ftDateTime,TFieldType.ftTimeStamp:
         begin
           if TDataSetSerializeConfig.GetInstance.DateIsFloatingPoint then
             Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, {$IF DEFINED(FPC)}LField.AsFloat{$ELSE}TJSONNumber.Create(LField.AsFloat){$ENDIF})
           else
             Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TJSONString.Create(FormatDateTime(TDataSetSerializeConfig.GetInstance.Export.FormatDateTime, LField.AsDateTime)));
-        end;
-      TFieldType.ftTimeStamp:
-        begin
-          if TDataSetSerializeConfig.GetInstance.DateIsFloatingPoint then
-            Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, {$IF DEFINED(FPC)}LField.AsFloat{$ELSE}TJSONNumber.Create(LField.AsFloat){$ENDIF})
-          else
-            Result.{$IF DEFINED(FPC)}Add{$ELSE}AddPair{$ENDIF}(LKey, TJSONString.Create(DateToISO8601(LField.AsDateTime, TDataSetSerializeConfig.GetInstance.DateInputIsUTC)));
         end;
       TFieldType.ftTime:
         begin
