@@ -8,7 +8,7 @@ interface
 
 uses
 {$IF DEFINED(FPC)}
-  DB, fpjson,
+  DB, fpjson, Generics.Collections,
 {$ELSE}
   System.JSON, Data.DB, System.StrUtils, System.SysUtils, System.Rtti,
   {$IF CompilerVersion >= 20}
@@ -212,12 +212,13 @@ var
   LJSONValue: {$IF DEFINED(FPC)}TJSONData{$ELSE}TJSONValue{$ENDIF};
   {$IF DEFINED(FPC)}
   I: Integer;
+  LBookMark: TBookmark;
   {$ELSE}
-  LNestedDataSet: TDataSet;
-  LBooleanValue: Boolean;
-  LDataSetDetails: TList<TDataSet>;
   LMasterSource: TDataSource;
+  LBooleanValue: Boolean;
   {$ENDIF}
+  LNestedDataSet: TDataSet;
+  LDataSetDetails: TList<TDataSet>;
   LObjectState: string;
   LFormatSettings: TFormatSettings;
   LKeyValues: TKeyValues;
@@ -443,14 +444,25 @@ begin
       TFDDataSet(ADataSet).MasterSource := LMasterSource;
     {$ENDIF}
   end;
-  {$IF NOT DEFINED(FPC)}
   LDataSetDetails := TList<TDataSet>.Create;
   try
-    ADataSet.GetDetailDataSets(LDataSetDetails);
+    TDataSetSerializeUtils.GetDetailsDatasets(ADataSet, LDataSetDetails);
     for LNestedDataSet in LDataSetDetails do
     begin
+      {$IF DEFINED(FPC)}
+      LBookMark := ADataSet.BookMark;
+      try
+        ADataSet.Refresh;
+        if ADataSet.BookmarkValid(LBookMark) then
+          ADataSet.GotoBookmark(LBookMark);
+      finally
+        ADataSet.FreeBookmark(LBookMark);
+      end;
+      LJSONValue := AJSONObject.Find(TDataSetSerializeUtils.FormatDataSetName(LNestedDataSet.Name));
+      {$ELSE}
       if not AJSONObject.TryGetValue(TDataSetSerializeUtils.FormatDataSetName(LNestedDataSet.Name), LJSONValue) then
         Continue;
+      {$ENDIF}
       if LJSONValue is TJSONNull then
         Continue;
       if TUpdateStatus.usUnmodified.ToString = LObjectState then
@@ -464,7 +476,6 @@ begin
   finally
     LDataSetDetails.Free;
   end;
-  {$ENDIF}
 end;
 
 function TJSONSerialize.JSONPairToFieldName(const AValue: string): string;
@@ -625,11 +636,13 @@ begin
 end;
 
 function TJSONSerialize.LoadFieldStructure(const AJSONValue: {$IF DEFINED(FPC)}TJSONData{$ELSE}TJSONValue{$ENDIF}): TFieldStructure;
-{$IF NOT DEFINED(FPC)}
 var
   LStrTemp: string;
   LIntTemp: Integer;
   LBoolTemp: Boolean;
+{$IF DEFINED(FPC)}
+  LJSONObject : TJSONObject;
+  LJSONNumber: TJSONNumber;
 {$ENDIF}
 begin
 {$IF NOT DEFINED(FPC)}
@@ -669,6 +682,51 @@ begin
 
   if AJSONValue.TryGetValue<string>(FIELD_PROPERTY_AUTO_GENERATE_VALUE, LStrTemp) then
     Result.AutoGenerateValue := TAutoRefreshFlag(GetEnumValue(TypeInfo(TAutoRefreshFlag), LStrTemp));
+
+  if AJSONValue.TryGetValue<Integer>(FIELD_PROPERTY_PRECISION, LIntTemp) then
+    Result.Precision := LIntTemp;
+  {$ELSE}
+  LJSONObject := AJSONValue as TJSONObject;
+  try
+    LStrTemp := LJSONObject.Strings['dataType'];
+    Result.FieldType := TFieldType(GetEnumValue(TypeInfo(TFieldType), LStrTemp));
+  except
+    raise EDataSetSerializeException.CreateFmt('Attribute %s not found in json!', [FIELD_PROPERTY_DATA_TYPE]);
+  end;
+
+  LStrTemp := LJSONObject.Strings['alignment'];
+  Result.Alignment := TAlignment(GetEnumValue(TypeInfo(TAlignment), LStrTemp));
+
+  try
+    LStrTemp := LJSONObject.Strings['fieldName'];
+    Result.FieldName := LStrTemp;
+  except
+    raise EDataSetSerializeException.CreateFmt('Attribute %s not found in json!', [FIELD_PROPERTY_FIELD_NAME]);
+  end;
+
+  LIntTemp := LJSONObject.Integers['size'];
+  Result.Size := LIntTemp;
+
+  LStrTemp := LJSONObject.Strings['origin'];
+  Result.Origin := LStrTemp;
+
+  LStrTemp := LJSONObject.Strings['displayLabel'];
+  Result.DisplayLabel := LStrTemp;
+
+  LBoolTemp := LJSONObject.Booleans['key'];
+  Result.Key := LBoolTemp;
+
+  LBoolTemp := LJSONObject.Booleans['required'];
+  Result.Required := LBoolTemp;
+
+  LBoolTemp := LJSONObject.Booleans['visible'];
+  Result.Visible := LBoolTemp;
+
+  LBoolTemp := LJSONObject.Booleans['readOnly'];
+  Result.ReadOnly := LBoolTemp;
+
+  if LJSONObject.Find('precision', LJSONNumber) then
+    Result.Precision := LJSONNumber.AsInteger;
 {$ENDIF}
 end;
 
