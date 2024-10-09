@@ -338,7 +338,11 @@ begin
           LField.Clear;
           Continue;
         end;
-        if LJSONValue.Value = EmptyStr then
+        {$IF DEFINED(FPC)}
+        if LJSONValue.AsString = EmptyStr then
+        {$ELSE}
+        if (LJSONValue.Value = EmptyStr) and (not (LJSONValue.InheritsFrom(TJSONArray))) then
+        {$ENDIF}
         begin
           LField.Clear;
           Continue;
@@ -458,7 +462,7 @@ begin
                   LField.AsString := LJSONValue.Value;
               end;
             end;
-          TFieldType.ftVarBytes:
+          TFieldType.ftVarBytes, TFieldType.ftBytes:
             begin
               SetLength(LBytes, Length(LJSONValue.Value) div 2);
               LHex := 1;
